@@ -2,7 +2,7 @@ import express from 'express';
 
 const router = express.Router();
 
-router.get('/send',(req, res)=>{
+router.get('/send',(_, res)=>{
     res.send('Send messages endpoint');
 });
 
