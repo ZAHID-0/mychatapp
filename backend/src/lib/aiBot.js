@@ -2,12 +2,10 @@ import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 
-// Fixed, well-known id so the bot is a stable "contact" for every user.
 export const BOT_ID = new mongoose.Types.ObjectId("000000000000000000000001");
 const BOT_EMAIL = "nova@bot.internal";
 const BOT_NAME = "Nova";
 
-// Simple violet robot avatar so it's visually distinct in the contact/chat lists.
 const BOT_AVATAR =
   "data:image/svg+xml;utf8," +
   encodeURIComponent(`
@@ -21,13 +19,11 @@ const BOT_AVATAR =
     </svg>
   `);
 
-// Creates the bot user once, on server startup, if it doesn't already exist.
 export async function ensureBotUser() {
   const existing = await User.findById(BOT_ID);
   if (existing) return existing;
 
   const salt = await bcrypt.genSalt(10);
-  // Bot never logs in through normal auth routes; password is just a placeholder.
   const hashedPassword = await bcrypt.hash(new mongoose.Types.ObjectId().toString(), salt);
 
   const bot = new User({
@@ -44,7 +40,6 @@ export async function ensureBotUser() {
   return bot;
 }
 
-// history: array of { senderId, text } ordered oldest -> newest, between the human user and the bot
 export async function getAIReply(history) {
   const apiKey = process.env.GEMINI_API_KEY;
 
