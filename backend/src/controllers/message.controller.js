@@ -2,6 +2,7 @@ import cloudinary from "../lib/cloudinary.js";
 import { getRecieverSocketId, io } from "../lib/socket.js";
 import Message from "../models/Message.js";
 import User from "../models/User.js";
+import { BOT_ID, getAIReply } from "../lib/aiBot.js";
 
 export const getAllContacts = async (req, res) => {
     try {
@@ -68,6 +69,12 @@ export const sendMessage = async (req, res) => {
 
         res.status(201).json(newMessage);
 
+        if (receiverId === BOT_ID.toString()) {
+            replyAsBot(senderId).catch((error) =>
+                console.log("Error generating AI reply", error)
+            );
+        }
+
     } catch (error) {
         console.log('Error in Send Message', error);
         res.status(500).json({message : 'Server Error'});
@@ -98,5 +105,31 @@ export const getChatParteners = async (req, res) => {
     } catch (error) {
         console.log('Error in Getting Chat Parteners', error);
         res.status(500).json({message : 'Server Error'});
+    }
+};
+
+const replyAsBot = async (humanUserId) => {
+    const recentMessages = await Message.find({
+        $or: [
+            { senderId: humanUserId, receiverId: BOT_ID },
+            { senderId: BOT_ID, receiverId: humanUserId },
+        ],
+    })
+        .sort({ createdAt: -1 })
+        .limit(20);
+
+    const history = recentMessages.reverse();
+    const replyText = await getAIReply(history);
+
+    const botMessage = new Message({
+        senderId: BOT_ID,
+        receiverId: humanUserId,
+        text: replyText,
+    });
+    await botMessage.save();
+
+    const humanSocketId = getRecieverSocketId(humanUserId.toString());
+    if (humanSocketId) {
+        io.to(humanSocketId).emit("newMessage", botMessage);
     }
 };

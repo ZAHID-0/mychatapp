@@ -8,6 +8,7 @@ import authRoutes from './routes/auth.route.js';
 import messageRoutes from './routes/message.route.js';
 import { connectDB } from './lib/db.js';
 import { app, server } from './lib/socket.js';
+import { ensureBotUser } from './lib/aiBot.js';
 
 dotenv.config();
 
@@ -34,6 +35,6 @@ if(process.env.NODE_ENV=='production'){
 
 server.listen(PORT,()=>{
     console.log(`server is running on port ${PORT}`);
-    connectDB();
+    connectDB().then(()=> ensureBotUser());
 });
 
